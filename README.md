@@ -6,7 +6,7 @@ This is an application simulating a gameshow where a user tries to pick a briefc
 
 `/src/index.js` contains the logic for the game show, while `/src/spec/index.js` contains the "simulation code" which runs the game thousands of times to come up with some recommendations for marketing.
 
-## Benifits
+## Benefits
 
 This is a pretty awesome prototype!
 
