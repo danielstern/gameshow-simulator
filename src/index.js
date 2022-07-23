@@ -1,6 +1,6 @@
 // Returns an object which is manipulated to enact the logic of the game show.
 
-const { zipObject } = require("lodash");
+const { zipObject, sample } = require("lodash");
 // const { sample } = require("")
 
 function createGameshowModel({
@@ -20,8 +20,8 @@ function createGameshowModel({
     const briefcaseWinnerIndex = zipObject(briefcases, briefcases.map((_briefcase, i) => i === winner_briefcase_index));
 
     return {
-        game_completed : false,
-        winner : false,
+        winner : null,
+        complete : false,
         selectionCount : 0,
         maximum_briefcase_selection_allowed,
         lastSelectedBriefcase : null,
@@ -43,7 +43,7 @@ function selectNextBriefcase(gameShowModel, briefcaseId) {
     const briefcaseExists = briefcases.includes(briefcaseId);
     const briefcaseRevealed = briefcasesRevealedIndex[briefcaseId];
     const nextSelectionCount = selectionCount + 1;
-    const selectionsRemaining = nextSelectionCount < maximum_briefcase_selection_allowed;
+    const selectionsRemaining = selectionCount < maximum_briefcase_selection_allowed;
 
     if (!selectionsRemaining) {
         throw new Error(
@@ -71,21 +71,79 @@ function selectNextBriefcase(gameShowModel, briefcaseId) {
 
 }
 
-function revealRandomLosingBriefcase(gameShowModel){
+function getSelectableBriefcases(gameShowModel) {
     const {
         briefcases,
-        briefcaseWinnerIndex,
-        briefcasesRevealedIndex
+        briefcasesRevealedIndex,
+        lastSelectedBriefcase
     } = gameShowModel;
 
-    const unrevealed = briefcases
-        .filter(_id => !briefcaseWinnerIndex[_id])
-        .filter(_id => !briefcasesRevealedIndex[_id]);
+    return briefcases
+        .filter(_id => !briefcasesRevealedIndex[_id])
+        .filter(_id => _id !== lastSelectedBriefcase)
+}
 
+function revealRandomLosingBriefcase(gameShowModel){
+    const {
+        briefcaseWinnerIndex,
+        briefcasesRevealedIndex,
+    } = gameShowModel;
+
+    const unrevealed = getSelectableBriefcases(gameShowModel)
+        .filter(_id => !briefcaseWinnerIndex[_id]);
+
+    if (unrevealed.length === 0) {
+        throw new Error(
+            `Cannot reveal the contents of a briefcase as no non-winning, unselected, unrevealed briefcases remain.`
+        )
+    }
+
+    const revealedId = sample(unrevealed);
+
+    const nextBriefcaseRevealIndex = {
+        ... briefcasesRevealedIndex,
+        [revealedId] : true
+    };
+
+    return {
+        ...gameShowModel,
+        briefcasesRevealedIndex : nextBriefcaseRevealIndex
+    }
     
+}
+
+function finalizeGame(gameShowModel) {
+
+    const {
+        briefcaseWinnerIndex,
+        lastSelectedBriefcase,
+        complete
+    } = gameShowModel;
+
+    if (complete) {
+        throw new Error(
+            `Cannot finalize this game as it is already complete.`
+        )
+    }
+    if (!lastSelectedBriefcase) {
+        throw new Error(
+            `Game cannot be finalized until the player has selected a briefcase`
+        )
+    }
+
+    const winner = briefcaseWinnerIndex[lastSelectedBriefcase];
+
+    return {
+        ...gameShowModel,
+        winner,
+        complete : true
+    }
 }
 
 module.exports = {
     createGameshowModel,
-    selectNextBriefcase
+    selectNextBriefcase,
+    revealRandomLosingBriefcase,
+    getSelectableBriefcases,
+    finalizeGame
 }
