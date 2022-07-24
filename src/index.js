@@ -1,37 +1,43 @@
-// Returns an object which is manipulated to enact the logic of the game show.
-
 const { zipObject, sample } = require("lodash");
-// const { sample } = require("")
+
+// Returns an object representing the gameshow. Has no methods, but it
+// is mutated by the other functions in this file.
 
 function createGameshowModel({
-    briefcase_count = 3,
-    winner_briefcase_index = 2,
-    maximum_briefcase_selection_allowed = 2
+    briefcase_count = 3, // how many briefcases to simulate
+    winner_briefcase_index = 2, // the index of the winning briefcase (from 0 to (briefcase_count - 1)))
+    maximum_briefcase_selection_allowed = 2 // the number of selections the player is allowed to make
 }){
 
+    // create array of briefcase ids... BRIEFCASE_1, BRIEFCASE 2... etc...
     const briefcases = [];
-
     for (let i = 0; i < briefcase_count; i++) {
         const _id = `BRIEFCASE_${i}`;
         briefcases.push(_id);
     }
 
+    // create indexes mapping true or false values for a) whether the briefcase is revealed and b)
+    // whether a briefcase contains a prize, to the briefcase indexes
     const briefcasesRevealedIndex = zipObject(briefcases, briefcases.map(b => false));
     const briefcaseWinnerIndex = zipObject(briefcases, briefcases.map((_briefcase, i) => i === winner_briefcase_index));
 
     return {
-        winner : null,
-        complete : false,
-        selectionCount : 0,
-        maximum_briefcase_selection_allowed,
-        lastSelectedBriefcase : null,
-        briefcases,
-        briefcasesRevealedIndex,
-        briefcaseWinnerIndex,
+        winner : null,  // if the contestant won this game. null if game is not complete.
+        complete : false, // if the simulation has been finished
+        selectionCount : 0, // how many selections the player has made so far
+        maximum_briefcase_selection_allowed, // max number of guesses
+        lastSelectedBriefcase : null, // the last briefcase the user chose. if it has a prize when the game is over, they win.
+        briefcases, // array of briefcase IDs
+        briefcasesRevealedIndex, // index: briefcase id -> has it been revealed
+        briefcaseWinnerIndex, // index: briefcase id -> does it win
     }
 }
 
-function selectNextBriefcase(gameShowModel, briefcaseId) {
+// returns the next gameshow state after changing the selected briefcase to the desired ID
+function selectNextBriefcase(
+    gameShowModel, // the current state of the show
+    briefcaseId // the desired briefcase ID
+) {
 
      const {
         briefcasesRevealedIndex,
@@ -71,6 +77,8 @@ function selectNextBriefcase(gameShowModel, briefcaseId) {
 
 }
 
+// Returns an array of briefcases which are valid to select. 
+// Invalid briefcases are those already revealed, and those already selected.
 function getSelectableBriefcases(gameShowModel) {
     const {
         briefcases,
@@ -83,6 +91,8 @@ function getSelectableBriefcases(gameShowModel) {
         .filter(_id => _id !== lastSelectedBriefcase)
 }
 
+// Updates the model of the gameshow so that one briefcase that is a loser
+// and previously unrevealed is now in a revealed state.
 function revealRandomLosingBriefcase(gameShowModel){
     const {
         briefcaseWinnerIndex,
@@ -112,6 +122,8 @@ function revealRandomLosingBriefcase(gameShowModel){
     
 }
 
+// changes the model complete status to true and calculates the value
+// of the winner property based on if the selected briefcase is a winner.
 function finalizeGame(gameShowModel) {
 
     const {

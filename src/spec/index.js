@@ -8,7 +8,12 @@ const {
     finalizeGame 
 } = require('../');
 
-const simulationIterations = 10000;
+
+const simulationIterations = 2000 * 10; // 10 times more simulations than requested. On purpose.
+
+// The code in this file runs thousands of instances of the gameshow code defined in the main index file.
+// This is down n' dirty spec code, as opposed to code that would ever be in a published version of the app,
+// so, on purpose, it is less commented and less DRY.
 
 for (const briefcase_count of [3,4,5]) {
     
